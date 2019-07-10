@@ -1,7 +1,7 @@
 let KRChar = {'ㄱ':'0100','ㄴ':'0010','ㄷ':'1000','ㄹ':'0001','ㅁ':'11','ㅂ':'011',	'ㅅ':'110','ㅇ':'101','ㅈ':'0110','ㅊ':'1010','ㅋ':'1001','ㅌ':'1100','ㅍ':'111','ㅎ':'0111','ㅏ':'0','ㅑ':'00','ㅓ':'1','ㅕ':'000','ㅗ':'01','ㅛ':'10','ㅜ':'0000','ㅠ':'010','ㅡ':'100','ㅣ':'001','ㅐ':'1101','ㅔ':'1011'},
 	ENChar = { 'A':'01', 'B':'1000', 'C':'1010','D':'100', 'E':'0', 'F':'0010','G':'110', 'H':'0000', 'I':'00','J':'0111', 'K':'101', 'L':'0100','M':'11', 'N':'10', 'O':'111','P':'0110', 'Q':'1101', 'R':'010','S':'000', 'T':'1', 'U':'001','V':'0001', 'W':'011', 'X':'1001','Y':'1011', 'Z':'1100'},
 	NumChar = {	'1':'01111','2':'00111','3':'00011','4':'00001','5':'00000','6':'10000','7':'11000','8':'11100','9':'11110','0':'11111',},
-	SpecialChar = {'.':'010101',',':'110011','?':'001100','/':'10010','+':'01010','-':'100001','=':'10001',':':'111000',';':'101010','(':'10110',')':'101101','"':'010010',"'":'011110','@':'011010','　':'',},
+	SpecialChar = {'.':'010101',',':'110011','?':'001100','/':'10010','+':'01010','-':'100001','=':'10001',':':'111000',';':'101010','(':'10110',')':'101101','"':'010010',"'":'011110','@':'011010',' ':' ',},
 	CodeType = { 'KR':KRChar , 'EN':ENChar, 'NUM':NumChar, 'SPChar':SpecialChar };
 
 let cCho  = [ 'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ' ],
@@ -26,8 +26,8 @@ String.prototype.toMorseChars = function() {
 
 String.prototype.unMorseChars = function(type) {
 
-	// 문자열 공백제거
-	var str = this.replace(/ /gi, ""), 
+	// 문자열
+	var str = this, 
         chars = MS_DeCoder(type, str),
         cnt = chars.length,
         cho, jung, jong;
@@ -223,12 +223,12 @@ String.prototype.unMorseChars = function(type) {
 
     			if( JongUniCode(recipe.prev) > -1) {
 
-    				var prevCPLX = mixChar[mixleng-2];;
-    				if(!COMPLEX[prevCPLX]){
+    				var precCPLX = mixChar[mixleng-2];;
+    				if(!COMPLEX[precCPLX]){
 
-    					prevCPLX = mixChar[mixleng-3]
+    					precCPLX = mixChar[mixleng-3]
     					
-    					if(JungUniCode(chars[i]) > -1 && COMPLEX[prevCPLX] ){
+    					if(JungUniCode(chars[i]) > -1 && COMPLEX[precCPLX] ){
 	    					var complete = String.fromCharCode( mixChar[mixleng-4].charCodeAt() +JongUniCode(mixChar[mixleng-3]));
 	    					mixChar.splice(mixleng-4, 4);
 		    				mixChar.push(complete);
@@ -251,8 +251,8 @@ String.prototype.unMorseChars = function(type) {
     				} else {
 
 						if( JungUniCode(chars[i]) > -1 ){
-							jong = COMPLEX[prevCPLX].charAt(0);
-							cho = COMPLEX[prevCPLX].charAt(1); 
+							jong = COMPLEX[precCPLX].charAt(0);
+							cho = COMPLEX[precCPLX].charAt(1); 
 
 							var complete = String.fromCharCode( mixChar[mixleng-3].charCodeAt() +JongUniCode(jong));
 							mixChar.splice(mixleng-3, 3);
@@ -284,7 +284,7 @@ String.prototype.unMorseChars = function(type) {
     			}
     		} 
     	}
-
+    	
     	cho = jung = jong = -1;
     	recipe.prev = chars[i];
 	}
@@ -372,7 +372,7 @@ function StringDetach(str){
     for (var i = 0; i < cnt; i++) {
         cCode = str.charCodeAt(i);
 
-		if (cCode == 32) { continue; } 
+		if (cCode == 32) { chars.push(' '); continue; } 
 
         if ( cCode < 0xAC00 || cCode > 0xD7A3 ) { // 한글이 아니거나 1글자일 경우
             chars.push(str.charAt(i));
@@ -386,6 +386,7 @@ function StringDetach(str){
 
         chars.push(cCho[cho], cJung[jung]);
 		if (cJong[jong] !== '') { chars.push(cJong[jong]); }
+		chars.push(''); //한글 자 구분.
     }
 
     return chars;
@@ -397,20 +398,20 @@ function StringDetach(str){
 function MS_EnCoder(chars){
 
 	let MS_CODE = '';
-
 	for(var i = 0; i < chars.length; i++){
-
 		var type = pattern_kor.test(chars[i]) ? 'KR':pattern_eng.test(chars[i]) ? 'EN':pattern_num.test(chars[i]) ? 'NUM':'SPChar'; // 번역 언어설정 
-
 		var Split_str = chars[i].toUpperCase(); // 영어는 대문자로 전환
 		var Morse_Code = CodeType[type][Split_str]; 
 
 		if(Morse_Code){
 
 			for(var j = 0; j < Morse_Code.length; j++){
-				MS_CODE += Morse_Code.charAt(j) === '0' ? '· ':'– '; //모스코드 변환 영문.숫자.한글
+				MS_CODE += 
+					Morse_Code.charAt(j) === '0' ? '· ':
+					Morse_Code.charAt(j) === '1' ? '– ':' ';//모스코드 변환 영문.숫자.한글
 			}
 			MS_CODE += '　';
+
 
 		} else if(COMPLEX[Split_str]){ // 특수문자 처리 
 
@@ -421,20 +422,22 @@ function MS_EnCoder(chars){
 				for(var g = 0; g < Morse_Code.length; g++){
 					MS_CODE += Morse_Code.charAt(g) === '0' ? '· ':'– '; //모스코드 변환
 				}
-
 				MS_CODE += '　';
 			}
-
-		} else { // 지원하지 않는 문자.
-			MS_CODE += chars[i]+' 　';
-			modal_Case('close', 'fail');
-			modal_open('" '+chars[i]+' " 는 인식할 수 없는 문자 입니다.');
+		} else { // 지원하지 않는 문자 띄어쓰기.
+			MS_CODE += chars[i]+'　';
+			if(chars[i] && chars[i] !== ' '){				
+				modal_Case('close', 'fail');
+				modal_open('" '+chars[i]+' " 는 인식할 수 없는 문자 입니다.');
+			}
 		}
 	}
 
+	var a = '　';
+	console.log(a.charCodeAt());
+
 	return MS_CODE;
 }
-
 
 
 // 모스부호 디코딩
@@ -446,9 +449,9 @@ function MS_DeCoder(type, str){
 		CodeArr = []; 
 
 	CodeArr = str.split('　');
-
 	for(var i = 0; i < CodeArr.length; i++){
-		var morseCode = CodeArr[i];
+		var spac = CodeArr[i].charCodeAt();
+		var morseCode = spac === 32 ? CodeArr[i]:CodeArr[i].replace(/ /gi, "");
 
 		for(var j = 0; j < morseCode.length; j++){
 			var split = morseCode.charAt(j);
@@ -460,8 +463,6 @@ function MS_DeCoder(type, str){
 		convert.push(decode);
 		cCode = '';
 	}
-
-
     return convert;
 }
 
@@ -475,7 +476,7 @@ function lnagsConver(type, str){
 		modal_open('준비중입니다.');
 		return '';
     }
-
+ 　
     // 선택 언어
     for (var key in CodeType[type]) {
     	if(CodeType[type][key] === str){ 
@@ -501,10 +502,8 @@ function lnagsConver(type, str){
 
 		    	}
 			}
+
     	}
-
-    	if(!MS_KEY){ MS_KEY= str; }
     }
-
     return MS_KEY;
 }
